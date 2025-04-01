@@ -1,6 +1,6 @@
 import { RecordNotFoundException } from '@app/error/custom-errors';
 import { Injectable } from '@nestjs/common';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 /**
@@ -9,16 +9,25 @@ import { join } from 'path';
  */
 @Injectable()
 export class DatabaseService {
-  private readonly STORAGE_PATH = 'storage/';
+  private readonly STORAGE_PATH = 'storage';
+  
   updateById(tableName: string, id: string, data: object) {
-    throw new Error('Method not implemented.');
+    const filePath = this.getFilePath(tableName, id);
+    const currentRecord = this.queryById(tableName, id);
+    const updatedRecord = { ...currentRecord, ...data };
+    writeFileSync(filePath, updatedRecord);
   }
+
   queryById(tableName: string, id: string): any {
-    const filePath = join(this.STORAGE_PATH, tableName, `${id}.json`);
+    const filePath = this.getFilePath(tableName, id);
     if (!existsSync(filePath)) {
       throw new RecordNotFoundException(`Record with id ${id} not found in table ${tableName}`);
     }
-    
+
     return readFileSync(filePath).toJSON();
+  }
+
+  private getFilePath(tableName: string, id: string): string {
+    return join(this.STORAGE_PATH, tableName, `${id}.json`);
   }
 }
