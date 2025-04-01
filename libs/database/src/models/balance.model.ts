@@ -1,5 +1,6 @@
 import { Asset } from "./asset.model";
 
 export class Balance {
-    [userId: string]: Asset;
+    userId: string;
+    assets: Asset;
 }

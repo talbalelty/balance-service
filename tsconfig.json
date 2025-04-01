@@ -29,6 +29,12 @@
       ],
       "@app/logger/*": [
         "libs/logger/src/*"
+      ],
+      "@app/error": [
+        "libs/error/src"
+      ],
+      "@app/error/*": [
+        "libs/error/src/*"
       ]
     }
   }
