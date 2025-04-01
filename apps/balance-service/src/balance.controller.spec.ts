@@ -17,10 +17,6 @@ describe('BalanceController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(balanceController.getHello()).toBe('Hello World!');
-    });
-
     it('should update balance', () => {
       const asset: AssetDto = { name: 'bitcoin', value: 1000 };
       balanceController.updateBalance(userId, asset);

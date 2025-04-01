@@ -11,10 +11,6 @@ export class BalanceService {
 
   constructor(private readonly databaseService: DatabaseService) { }
 
-  getHello(): string {
-    return 'Hello World!';
-  }
-
   updateBalance(userId: string, asset: AssetDto) {
     // get the user balance from the database
     const userBalance: Balance = this.databaseService.queryById(this.TABLE_NAME, userId);

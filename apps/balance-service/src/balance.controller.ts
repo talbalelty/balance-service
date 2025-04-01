@@ -6,11 +6,6 @@ import { AssetDto } from './dto/asset.dto';
 export class BalanceController {
   constructor(private readonly balanceService: BalanceService) { }
 
-  @Get()
-  getHello(): string {
-    return this.balanceService.getHello();
-  }
-
   @Put()
   updateBalance(
     @Headers('X-User-ID') userId: string, 
