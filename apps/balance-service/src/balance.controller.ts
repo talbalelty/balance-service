@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Put, Query } from '@nestjs/common';
 import { BalanceService } from './balance.service';
 import { AssetDto } from './dto/asset.dto';
 
@@ -19,11 +19,11 @@ export class BalanceController {
     return this.balanceService.getBalances(userId);
   }
 
-  @Get('total')
-  getTotal(
+  @Get('total/:currency')
+  async getTotal(
     @Headers('X-User-ID') userId: string, 
-    @Query('currency') currency: string
-  ): number {
-    return this.balanceService.getTotalBalance(userId, currency);
+    @Param('currency') currency: string
+  ): Promise<number> {
+    return await this.balanceService.getTotalBalance(userId, currency);
   }
 }
