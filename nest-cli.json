@@ -54,6 +54,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/error/tsconfig.lib.json"
       }
+    },
+    "utility": {
+      "type": "library",
+      "root": "libs/utility",
+      "entryFile": "index",
+      "sourceRoot": "libs/utility/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/utility/tsconfig.lib.json"
+      }
     }
   }
 }

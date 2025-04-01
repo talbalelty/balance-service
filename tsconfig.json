@@ -35,6 +35,12 @@
       ],
       "@app/error/*": [
         "libs/error/src/*"
+      ],
+      "@app/utility": [
+        "libs/utility/src"
+      ],
+      "@app/utility/*": [
+        "libs/utility/src/*"
       ]
     }
   }

@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { RateServiceController } from './rate-service.controller';
-import { RateServiceService } from './rate-service.service';
+import { RateServiceCoinGecko } from './rate-service-coin-gecko.service';
+import { UtilityModule } from '@app/utility';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [],
+  imports: [UtilityModule, CacheModule.register()],
   controllers: [RateServiceController],
-  providers: [RateServiceService],
+  providers: [RateServiceCoinGecko],
 })
 export class RateServiceModule {}
