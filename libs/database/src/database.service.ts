@@ -2,13 +2,14 @@ import { RecordNotFoundException } from '@app/error/custom-errors';
 import { Injectable } from '@nestjs/common';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { DatabaseInterface } from './database.interface';
 
 /**
  * The DB in this service is made up of JSON files that are stored in the filesystem.
  * In the case of Balance each record is a different JSON file for each user.
  */
 @Injectable()
-export class DatabaseService {
+export class DatabaseService implements DatabaseInterface {
   private readonly STORAGE_PATH = join(__dirname, 'storage');
 
   constructor() {
