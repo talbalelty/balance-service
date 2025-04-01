@@ -6,7 +6,10 @@ export class AssetDto {
     @IsEnum(['bitcoin', 'ethereum', 'oobit'], { message: 'Invalid asset type' })
     name: string;
 
-    @IsNumber()
+    @IsNumber({
+        allowNaN: false,
+        allowInfinity: false,
+    })
     @IsNotEmpty()
     value: number;
 }

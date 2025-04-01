@@ -1,12 +1,14 @@
-import { RecordNotFoundException } from '@app/error/custom-errors';
-import { Injectable } from '@nestjs/common';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { Injectable } from '@nestjs/common';
+import { RecordNotFoundException } from '@app/error/custom-errors';
 import { DatabaseInterface } from './database.interface';
+import { readFile, writeFile, unlink } from 'fs/promises';
 
 /**
- * The DB in this service is made up of JSON files that are stored in the filesystem.
- * In the case of Balance each record is a different JSON file for each user.
+ * 1. The DB in this service is made up of JSON files that are stored in the filesystem.
+ * 2. In the case of Balance each record is a different JSON file for each user.
+ * 3. For ease of use, the file name is the user id.
  */
 @Injectable()
 export class DatabaseService implements DatabaseInterface {
@@ -16,20 +18,39 @@ export class DatabaseService implements DatabaseInterface {
     this.createStorageDirectory();
   }
 
-  updateById(tableName: string, id: string, data: object) {
+  /**
+   * because the file name is the user id, we also consider this function as overwrite.
+   * @param tableName 
+   * @param id 
+   * @param data 
+   */
+  async create(tableName: string, id: string, data: object) {
+    data['userId'] = id;
     const filePath = this.getFilePath(tableName, id);
-    const currentRecord = this.queryById(tableName, id);
-    const updatedRecord = { ...currentRecord, ...data };
-    writeFileSync(filePath, JSON.stringify(updatedRecord));
+    await writeFile(filePath, JSON.stringify(data));
+    return data;
   }
 
-  queryById(tableName: string, id: string): any {
+  async queryById(tableName: string, id: string) {
     const filePath = this.getFilePath(tableName, id);
     if (!existsSync(filePath)) {
       throw new RecordNotFoundException(`Record with id ${id} not found in table ${tableName}`);
     }
 
-    return JSON.parse(readFileSync(filePath, 'utf-8'));
+    return JSON.parse(await readFile(filePath, 'utf-8'));
+  }
+
+  async updateById(tableName: string, id: string, data: object) {
+    const filePath = this.getFilePath(tableName, id);
+    const currentRecord = await this.queryById(tableName, id);
+    const updatedRecord = { ...currentRecord, ...data };
+    await writeFile(filePath, JSON.stringify(updatedRecord));
+    return updatedRecord;
+  }
+
+  async deleteById(tableName: string, id: string) {
+    const filePath = this.getFilePath(tableName, id);
+    await unlink(filePath);
   }
 
   private getFilePath(tableName: string, id: string): string {

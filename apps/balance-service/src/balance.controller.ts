@@ -1,22 +1,31 @@
-import { Body, Controller, Get, Headers, Param, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Put } from '@nestjs/common';
 import { BalanceService } from './balance.service';
 import { AssetDto } from './dto/asset.dto';
+import { BalanceDto } from './dto';
 
 @Controller('balance')
 export class BalanceController {
   constructor(private readonly balanceService: BalanceService) { }
 
+  @Post()
+  async createBalance(
+    @Headers('X-User-ID') userId: string, 
+    @Body() balance: BalanceDto
+  )  {
+    return await this.balanceService.createBalance(userId, balance);
+  }
+
   @Put()
-  updateBalance(
+  async updateBalance(
     @Headers('X-User-ID') userId: string, 
     @Body() asset: AssetDto
-  ): void {
-    this.balanceService.updateBalance(userId, asset);
+  ) {
+    return await this.balanceService.updateBalance(userId, asset);
   }
 
   @Get()
-  getBalances(@Headers('X-User-ID') userId: string): AssetDto[] {
-    return this.balanceService.getBalances(userId);
+  async getBalances(@Headers('X-User-ID') userId: string): Promise<AssetDto[]> {
+    return await this.balanceService.getBalances(userId);
   }
 
   @Get('total/:currency')
