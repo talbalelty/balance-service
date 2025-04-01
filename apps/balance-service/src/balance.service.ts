@@ -14,12 +14,12 @@ export class BalanceService {
   updateBalance(userId: string, asset: AssetDto) {
     // get the user balance from the database
     const userBalance: Balance = this.databaseService.queryById(this.TABLE_NAME, userId);
-    // In this service we don't allow depts, so we check if the asset value is negative
+    // In this service we don't allow debts, so we check if the asset value is negative
     const newValue = userBalance.assets[asset.name] + asset.value;
     if (newValue < 0) {
       throw new NegativeBalanceException(userId, asset.name, newValue);
     }
-    
+
     userBalance.assets[asset.name] = newValue;
     this.databaseService.updateById(this.TABLE_NAME, userId, userBalance);
   }

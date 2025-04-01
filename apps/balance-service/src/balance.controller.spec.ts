@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BalanceController } from './balance.controller';
 import { BalanceService } from './balance.service';
 import { AssetDto } from './dto/asset.dto';
+import { DatabaseModule } from '@app/database';
 
 describe('BalanceController', () => {
   let balanceController: BalanceController;
@@ -9,6 +10,7 @@ describe('BalanceController', () => {
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
+      imports: [DatabaseModule],
       controllers: [BalanceController],
       providers: [BalanceService],
     }).compile();
@@ -20,8 +22,12 @@ describe('BalanceController', () => {
     it('should update balance', () => {
       const asset: AssetDto = { name: 'bitcoin', value: 1000 };
       balanceController.updateBalance(userId, asset);
-      // TODO : check if the balance was updated correctly
-
+      const balances: AssetDto[] = balanceController.getBalances(userId);
+      expect(balances).toBeInstanceOf(Array);
+      const balance = balances.find((b) => b.name === asset.name);
+      expect(balance).toBeDefined();
+      expect(balance.name).toEqual(asset.name);
+      expect(balance.value).toEqual(asset.value + 50);
     });
 
     it('should not update balance', () => {
