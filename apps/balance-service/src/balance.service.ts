@@ -29,6 +29,10 @@ export class BalanceService {
   }
 
   getBalances(userId: string): AssetDto[] {
-    throw new Error('Method not implemented.');
+    const balance: Balance = this.databaseService.queryById(this.TABLE_NAME, userId);
+    const assets: AssetDto[] = Object.entries(balance.assets).map(([name, value]) => {
+      return { name, value };
+    });
+    return assets;
   }
 }
