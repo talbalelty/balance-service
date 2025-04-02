@@ -54,9 +54,9 @@ describe('BalanceController', () => {
       // TODO : check if the userId does not exist
     });
 
-    it('should return total balance', () => {
+    it('should return total balance', async () => {
       const currency = 'usd';
-      const total = balanceController.getTotal(userId, currency);
+      const total = await balanceController.getTotal(userId, currency);
       expect(total).toBeDefined();
       expect(typeof total).toBe('number');
     });

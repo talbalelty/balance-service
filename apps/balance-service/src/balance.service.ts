@@ -44,18 +44,19 @@ export class BalanceService {
   }
 
   async getBalances(userId: string): Promise<BalanceDto> {
-    const balance: Balance = await this.databaseService.queryById(this.TABLE_NAME, userId);
+    const balance: Balance = await this.readBalance(userId);
     const balanceDto: BalanceDto = new BalanceDto();
     balanceDto.assets = this.convertObjToArray(balance.assets);
     return balanceDto;
   }
 
   async getTotalBalance(userId: string, currency: string): Promise<number> {
-    const balance: Balance = await this.databaseService.queryById(this.TABLE_NAME, userId);
+    const balance: Balance = await this.readBalance(userId);
     const coins = Object.keys(balance.assets).join(',');
     const url = new URL('rate', this.RATE_SERVICE_URL);
     url.searchParams.append('coins', coins);
     url.searchParams.append('currency', currency);
+    console.log(url.toString());
     const response = await this.httpService.axiosRef.get(url.toString());
     if (response.status !== 200) {
       throw new Error('Error fetching rates from the service');
