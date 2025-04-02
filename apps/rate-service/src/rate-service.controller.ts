@@ -1,9 +1,7 @@
-import { Controller, Get, Logger, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { RateServiceCoinGecko } from './rate-service-coin-gecko.service';
-import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @Controller('rate')
-@UseInterceptors(CacheInterceptor)
 export class RateServiceController {
   private readonly logger = new Logger(RateServiceController.name);
   constructor(private readonly rateServiceService: RateServiceCoinGecko) { }
@@ -15,11 +13,11 @@ export class RateServiceController {
   ): Promise<object> {
     this.logger.log(`Received request for rates with coins: ${coins} and currency: ${currency}`);
     // Validate the coins and currency parameters
-    if (!coins || !currency) {
-      throw new Error('Coins and currency parameters are required');
-    }
     try {
-      return await this.rateServiceService.getRates(coins, currency);
+      if (!this.rateServiceService.validateCoins(coins) || !this.rateServiceService.validateCurrency(currency)) {
+        throw new Error('Coins and currency parameters are required');
+      }
+      return await this.rateServiceService.getRates(coins.toLowerCase(), currency.toLowerCase());
     } catch (error) {
       this.logger.error('Error fetching rates:', error);
       throw error;

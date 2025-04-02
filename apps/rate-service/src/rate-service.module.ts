@@ -6,7 +6,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [UtilityModule, CacheModule.register({
-    ttl: 10000, // 10 seconds
+    ttl: 120000, // 2 minute
   })],
   controllers: [RateServiceController],
   providers: [RateServiceCoinGecko],
