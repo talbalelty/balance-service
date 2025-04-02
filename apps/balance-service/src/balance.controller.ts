@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Put } from '@nestjs/common';
 import { BalanceService } from './balance.service';
 import { AssetDto } from './dto/asset.dto';
 import { BalanceDto } from './dto';
@@ -7,24 +7,16 @@ import { BalanceDto } from './dto';
 export class BalanceController {
   constructor(private readonly balanceService: BalanceService) { }
 
-  @Post()
-  async createBalance(
-    @Headers('X-User-ID') userId: string, 
-    @Body() balance: BalanceDto
-  )  {
-    return await this.balanceService.createBalance(userId, balance);
-  }
-
   @Put()
   async updateBalance(
     @Headers('X-User-ID') userId: string, 
-    @Body() balance: BalanceDto
+    @Body() asset: AssetDto
   ) {
-    return await this.balanceService.updateBalance(userId, balance);
+    return await this.balanceService.addOrRemoveBalance(userId, asset);
   }
 
   @Get()
-  async getBalances(@Headers('X-User-ID') userId: string): Promise<AssetDto[]> {
+  async getBalances(@Headers('X-User-ID') userId: string): Promise<BalanceDto> {
     return await this.balanceService.getBalances(userId);
   }
 

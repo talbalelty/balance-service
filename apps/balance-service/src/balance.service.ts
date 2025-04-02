@@ -21,6 +21,14 @@ export class BalanceService {
     this.RATE_SERVICE_URL = this.configService.getOrThrow<string>('RATE_SERVICE_URL');
   }
 
+  /**
+   * add or remove balance for a user. If the user doesn't have a balance, it will be created.
+   * If the user has a balance, it will be updated.
+   * 
+   * @param userId 
+   * @param asset 
+   * @returns 
+   */
   async addOrRemoveBalance(userId: string, asset: AssetDto): Promise<BalanceDto> {
     const balance: Balance = await this.readBalance(userId);
     balance.assets[asset.name] = (balance.assets[asset.name] || 0) + asset.value;
@@ -56,21 +64,21 @@ export class BalanceService {
     return this.calculateTotalBalance(balance.assets, rates, currency);
   }
 
-  private async createBalance(userId: string, balance: Balance): Promise<Balance> {
+  async createBalance(userId: string, balance: Balance): Promise<Balance> {
     balance.userId = userId;
     await this.databaseService.create(this.TABLE_NAME, userId, balance);
     return balance;
   }
 
-  private async readBalance(userId: string): Promise<Balance> {
+  async readBalance(userId: string): Promise<Balance> {
     return await this.databaseService.queryById(this.TABLE_NAME, userId);
   }
 
-  private async updateBalance(userId: string, balance: Balance): Promise<Balance> {
+  async updateBalance(userId: string, balance: Balance): Promise<Balance> {
     return await this.databaseService.updateById(this.TABLE_NAME, userId, balance);
   }
 
-  private async deleteBalance(userId: string): Promise<void> {
+  async deleteBalance(userId: string): Promise<void> {
     return await this.databaseService.deleteById(this.TABLE_NAME, userId);
   }
 
@@ -87,5 +95,4 @@ export class BalanceService {
   private convertObjToArray(obj: object): any[] {
     return Object.entries(obj).map(([name, value]) => ({ name, value }));
   }
-
 }
