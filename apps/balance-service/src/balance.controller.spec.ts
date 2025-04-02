@@ -40,12 +40,13 @@ describe('BalanceController', () => {
 
     // });
 
-    it('should return balances', () => {
-      const assets = balanceController.getBalances(userId);
-      expect(assets).toBeInstanceOf(Array);
+    it('should return balances', async () => {
+      const balanceDto: BalanceDto = await balanceController.getBalances(userId);
+      expect(balanceDto).toBeDefined();
+      expect(balanceDto.assets).toBeInstanceOf(Array);
       // check asset properties
-      expect(assets[0]).toHaveProperty('name');
-      expect(assets[0]).toHaveProperty('value');
+      expect(balanceDto.assets[0]).toHaveProperty('name');
+      expect(balanceDto.assets[0]).toHaveProperty('value');
     });
 
     it('should return userId does not exist', () => {
