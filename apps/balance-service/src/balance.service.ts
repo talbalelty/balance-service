@@ -7,7 +7,6 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { BalanceDto } from './dto';
 
-
 @Injectable()
 export class BalanceService {
 
@@ -22,29 +21,25 @@ export class BalanceService {
     this.RATE_SERVICE_URL = this.configService.getOrThrow<string>('RATE_SERVICE_URL');
   }
 
-  async createBalance(userId: string, balanceDto: BalanceDto) {
-    balanceDto.userId = userId; // override the userId in the balance object
-    const userBalance: Balance = new Balance();
-    userBalance.userId = userId;
-    userBalance.assets = balanceDto.assets.reduce((acc, asset) => {
-      acc[asset.name] = asset.value;
-      return acc;
-    }, {} as Asset);
-    await this.databaseService.create(this.TABLE_NAME, userId, userBalance);
+  async addOrRemoveBalance(userId: string, asset: AssetDto): Promise<BalanceDto> {
+    const balance: Balance = await this.readBalance(userId);
+    balance.assets[asset.name] = (balance.assets[asset.name] || 0) + asset.value;
+    // In my app I don't allow customers to go into debt.
+    if (balance.assets[asset.name] < 0) {
+      throw new NegativeBalanceException(userId, asset.name, balance.assets[asset.name]);
+    }
+
+    await this.updateBalance(userId, balance);
+    const balanceDto: BalanceDto = new BalanceDto();
+    balanceDto.assets = this.convertObjToArray(balance.assets);
     return balanceDto;
   }
 
-  async updateBalance(userId: string, asset: AssetDto) {
-    // get the user balance from the database
-    const userBalance: Balance = await this.databaseService.queryById(this.TABLE_NAME, userId);
-    // In this service we don't allow debts, so we check if the asset value is negative
-    const newValue = userBalance.assets[asset.name] + asset.value;
-    if (newValue < 0) {
-      throw new NegativeBalanceException(userId, asset.name, newValue);
-    }
-
-    userBalance.assets[asset.name] = newValue;
-    this.databaseService.updateById(this.TABLE_NAME, userId, userBalance);
+  async getBalances(userId: string): Promise<BalanceDto> {
+    const balance: Balance = await this.databaseService.queryById(this.TABLE_NAME, userId);
+    const balanceDto: BalanceDto = new BalanceDto();
+    balanceDto.assets = this.convertObjToArray(balance.assets);
+    return balanceDto;
   }
 
   async getTotalBalance(userId: string, currency: string): Promise<number> {
@@ -61,12 +56,22 @@ export class BalanceService {
     return this.calculateTotalBalance(balance.assets, rates, currency);
   }
 
-  async getBalances(userId: string): Promise<AssetDto[]> {
-    const balance: Balance = await this.databaseService.queryById(this.TABLE_NAME, userId);
-    const assets: AssetDto[] = Object.entries(balance.assets).map(([name, value]) => {
-      return { name, value };
-    });
-    return assets;
+  private async createBalance(userId: string, balance: Balance): Promise<Balance> {
+    balance.userId = userId;
+    await this.databaseService.create(this.TABLE_NAME, userId, balance);
+    return balance;
+  }
+
+  private async readBalance(userId: string): Promise<Balance> {
+    return await this.databaseService.queryById(this.TABLE_NAME, userId);
+  }
+
+  private async updateBalance(userId: string, balance: Balance): Promise<Balance> {
+    return await this.databaseService.updateById(this.TABLE_NAME, userId, balance);
+  }
+
+  private async deleteBalance(userId: string): Promise<void> {
+    return await this.databaseService.deleteById(this.TABLE_NAME, userId);
   }
 
   private calculateTotalBalance(assets: Asset, rates: object, currency: string): number {
@@ -77,6 +82,10 @@ export class BalanceService {
       }
     }
     return total;
+  }
+
+  private convertObjToArray(obj: object): any[] {
+    return Object.entries(obj).map(([name, value]) => ({ name, value }));
   }
 
 }

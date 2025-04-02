@@ -18,9 +18,9 @@ export class BalanceController {
   @Put()
   async updateBalance(
     @Headers('X-User-ID') userId: string, 
-    @Body() asset: AssetDto
+    @Body() balance: BalanceDto
   ) {
-    return await this.balanceService.updateBalance(userId, asset);
+    return await this.balanceService.updateBalance(userId, balance);
   }
 
   @Get()
