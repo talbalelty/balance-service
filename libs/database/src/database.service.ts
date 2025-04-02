@@ -50,7 +50,7 @@ export class DatabaseService implements DatabaseInterface {
 
   async deleteById(tableName: string, id: string) {
     const filePath = this.getFilePath(tableName, id);
-    await unlink(filePath);
+    return await unlink(filePath);
   }
 
   private getFilePath(tableName: string, id: string): string {
