@@ -3,6 +3,8 @@ import { BalanceController } from './balance.controller';
 import { BalanceService } from './balance.service';
 import { AssetDto } from './dto/asset.dto';
 import { DatabaseModule } from '@app/database';
+import { BalanceDto } from './dto';
+import { UtilityModule } from '@app/utility';
 
 describe('BalanceController', () => {
   let balanceController: BalanceController;
@@ -10,7 +12,7 @@ describe('BalanceController', () => {
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
-      imports: [DatabaseModule],
+      imports: [DatabaseModule, UtilityModule],
       controllers: [BalanceController],
       providers: [BalanceService],
     }).compile();
@@ -19,15 +21,16 @@ describe('BalanceController', () => {
   });
 
   describe('root', () => {
-    it('should update balance', () => {
-      const asset: AssetDto = { name: 'bitcoin', value: 1000 };
-      balanceController.updateBalance(userId, asset);
-      const balances: AssetDto[] = balanceController.getBalances(userId);
-      expect(balances).toBeInstanceOf(Array);
-      const balance = balances.find((b) => b.name === asset.name);
-      expect(balance).toBeDefined();
-      expect(balance.name).toEqual(asset.name);
-      expect(balance.value).toEqual(asset.value + 50);
+    it('should add or remove balance', async () => {
+      const assetDto: AssetDto = { name: 'bitcoin', value: 1000 };
+      await balanceController.updateBalance(userId, assetDto);
+      const balanceDto: BalanceDto = await balanceController.getBalances(userId);
+      expect(balanceDto).toBeDefined();
+      expect(balanceDto.assets).toBeInstanceOf(Array);
+      const asset = balanceDto.assets.find((b) => b.name === assetDto.name);
+      expect(asset).toBeDefined();
+      expect(asset.name).toEqual(assetDto.name);
+      expect(asset.value).toEqual(assetDto.value + 50);
     });
 
     // it('should not update balance', () => {
