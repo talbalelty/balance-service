@@ -73,7 +73,7 @@ export class BalanceController {
     }
   }
 
-  @Put()
+  @Put('add-or-remove')
   async AddOrRemoveBalance(
     @Headers('X-User-ID') userId: string,
     @Body() asset: AssetDto
