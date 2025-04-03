@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AssetDto } from './dto/asset.dto';
 import { DatabaseService } from '@app/database';
-import { NegativeBalanceException } from '@app/error/custom-errors';
+import { NegativeBalanceException, RecordNotFoundException } from '@app/error/custom-errors';
 import { Asset, Balance } from '@app/database/models';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -31,6 +31,10 @@ export class BalanceService {
    */
   async addOrRemoveBalance(userId: string, asset: AssetDto): Promise<BalanceDto> {
     const balance: Balance = await this.readBalance(userId);
+    if (!balance) {
+      throw new RecordNotFoundException(`Balance for user ${userId} not found`);
+    }
+
     balance.assets[asset.name] = (balance.assets[asset.name] || 0) + asset.value;
     // In my app I don't allow customers to go into debt.
     if (balance.assets[asset.name] < 0) {
@@ -38,16 +42,16 @@ export class BalanceService {
     }
 
     await this.updateBalance(userId, balance);
-    const balanceDto: BalanceDto = new BalanceDto();
-    balanceDto.assets = this.convertObjToArray(balance.assets);
-    return balanceDto;
+    return BalanceDto.fromBalance(balance);
   }
 
   async getBalances(userId: string): Promise<BalanceDto> {
     const balance: Balance = await this.readBalance(userId);
-    const balanceDto: BalanceDto = new BalanceDto();
-    balanceDto.assets = this.convertObjToArray(balance.assets);
-    return balanceDto;
+    if (!balance) {
+      throw new RecordNotFoundException(`Balance for user ${userId} not found`);
+    }
+
+    return BalanceDto.fromBalance(balance);
   }
 
   async getTotalBalance(userId: string, currency: string): Promise<number> {
@@ -56,10 +60,9 @@ export class BalanceService {
     const url = new URL('rate', this.RATE_SERVICE_URL);
     url.searchParams.append('coins', coins);
     url.searchParams.append('currency', currency);
-    console.log(url.toString());
     const response = await this.httpService.axiosRef.get(url.toString());
     if (response.status !== 200) {
-      throw new Error('Error fetching rates from the service');
+      throw new Error(response.statusText);
     }
     const rates = response.data;
     return this.calculateTotalBalance(balance.assets, rates, currency);
@@ -91,9 +94,5 @@ export class BalanceService {
       }
     }
     return total;
-  }
-
-  private convertObjToArray(obj: object): any[] {
-    return Object.entries(obj).map(([name, value]) => ({ name, value }));
   }
 }

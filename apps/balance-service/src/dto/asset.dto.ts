@@ -1,9 +1,11 @@
+import { Transform } from 'class-transformer';
 import { IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class AssetDto {
     @IsString()
     @IsNotEmpty()
-    @IsEnum(['bitcoin', 'ethereum', 'oobit'], { message: 'Invalid asset type' })
+    @Transform(({ value }) => value.toLowerCase().trim())
+    @IsEnum(['bitcoin', 'ethereum'], { message: 'Invalid asset type' })
     name: string;
 
     @IsNumber({

@@ -5,9 +5,13 @@ import { AssetDto } from './dto/asset.dto';
 import { DatabaseModule } from '@app/database';
 import { BalanceDto } from './dto';
 import { UtilityModule } from '@app/utility';
+import { RecordNotFoundException } from '@app/error/custom-errors';
+import { BadRequestException } from '@nestjs/common';
+import { validate } from 'class-validator';
 
 describe('BalanceController', () => {
   let balanceController: BalanceController;
+  let balanceService: BalanceService;
   const userId = '0000';
 
   beforeEach(async () => {
@@ -18,12 +22,21 @@ describe('BalanceController', () => {
     }).compile();
 
     balanceController = app.get<BalanceController>(BalanceController);
+    balanceService = app.get<BalanceService>(BalanceService);
+    // Write a test balance for the userId
+    await balanceService.createBalance(userId, {
+      "userId": userId,
+      "assets": {
+        "bitcoin": 50,
+        "ethereum": 100
+      }
+    })
   });
 
   describe('root', () => {
     it('should add or remove balance', async () => {
       const assetDto: AssetDto = { name: 'bitcoin', value: 1000 };
-      await balanceController.updateBalance(userId, assetDto);
+      await balanceController.AddOrRemoveBalance(userId, assetDto);
       const balanceDto: BalanceDto = await balanceController.getBalances(userId);
       expect(balanceDto).toBeDefined();
       expect(balanceDto.assets).toBeInstanceOf(Array);
@@ -33,12 +46,18 @@ describe('BalanceController', () => {
       expect(asset.value).toEqual(assetDto.value + 50);
     });
 
-    // it('should not update balance', () => {
-    //   const asset: AssetDto = { name: 'XXXXX', value: 1000 };
-    //   expect(() => balanceController.updateBalance(userId, asset)).toThrow();
-    //   // TODO : check if the balance was not updated
+    it('should not update balance', async () => {
+      const asset: AssetDto = { name: 'bitcoin', value: 1000 };
+      await expect(balanceController.AddOrRemoveBalance('XXXX', asset)).rejects.toThrow(RecordNotFoundException);
+    });
 
-    // });
+    it('should not add or remove balance', async () => {
+      const asset: AssetDto = new AssetDto(); // must initialize the object to validate it
+      asset.name = 'bitcoinZZ';
+      asset.value = -1000;
+      const errors = await validate(asset);
+      expect(errors.length).not.toBe(0);
+    });
 
     it('should return balances', async () => {
       const balanceDto: BalanceDto = await balanceController.getBalances(userId);
@@ -49,18 +68,22 @@ describe('BalanceController', () => {
       expect(balanceDto.assets[0]).toHaveProperty('value');
     });
 
-    it('should return userId does not exist', () => {
-      balanceController.getBalances('XXXXX');
-      // TODO : check if the userId does not exist
+    it('should return userId does not exist', async () => {
+      await expect(balanceController.getBalances('XXXXX')).rejects.toThrow(RecordNotFoundException);
+    });
+
+    it('should return bad request', async () => {
+      await expect(balanceController.getBalances('')).rejects.toThrow(BadRequestException);
     });
 
     it('should return total balance', async () => {
-      const currency = 'usd';
-      const total = await balanceController.getTotal(userId, currency);
+      const total = await balanceController.getTotal(userId, 'usd');
       expect(total).toBeDefined();
       expect(typeof total).toBe('number');
     });
 
-    // TODO: check if the currency is not supported
+    it('should not return total balance', async () => {
+      await expect(balanceController.getTotal(userId, 'XXX')).rejects.toThrow("Request failed with status code 400");
+    });
   });
 });

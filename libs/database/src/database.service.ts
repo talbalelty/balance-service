@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { Injectable } from '@nestjs/common';
 import { RecordNotFoundException } from '@app/error/custom-errors';
@@ -34,7 +34,7 @@ export class DatabaseService implements DatabaseInterface {
   async queryById(tableName: string, id: string) {
     const filePath = this.getFilePath(tableName, id);
     if (!existsSync(filePath)) {
-      throw new RecordNotFoundException(`Record with id ${id} not found in table ${tableName}`);
+      return undefined;
     }
 
     return JSON.parse(await readFile(filePath, 'utf-8'));
@@ -43,6 +43,9 @@ export class DatabaseService implements DatabaseInterface {
   async updateById(tableName: string, id: string, data: object) {
     const filePath = this.getFilePath(tableName, id);
     const currentRecord = await this.queryById(tableName, id);
+    if (!currentRecord) {
+      throw new RecordNotFoundException(`Record with id ${id} not found`);
+    }
     const updatedRecord = { ...currentRecord, ...data };
     await writeFile(filePath, JSON.stringify(updatedRecord));
     return updatedRecord;
@@ -61,15 +64,5 @@ export class DatabaseService implements DatabaseInterface {
     if (!existsSync(this.STORAGE_PATH)) {
       mkdirSync(join(this.STORAGE_PATH, 'balance'), { recursive: true });
     }
-
-    // Write the file
-    writeFileSync(join(this.STORAGE_PATH, 'balance', '0000.json'), JSON.stringify({
-      "userId": "0000",
-      "assets": {
-        "bitcoin": 50,
-        "ethereum": 100,
-        "oobit": 1000
-      }
-    }));
   }
 }
