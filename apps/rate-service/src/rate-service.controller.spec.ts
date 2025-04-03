@@ -4,6 +4,7 @@ import { RateServiceCoinGecko } from './rate-service-coin-gecko.service';
 import { RateServiceModule } from './rate-service.module';
 import { HttpModule } from '@nestjs/axios';
 import { CacheModule } from '@nestjs/cache-manager';
+import { BadRequestException } from '@nestjs/common';
 
 describe('RateServiceController', () => {
   let rateServiceController: RateServiceController;
@@ -29,10 +30,16 @@ describe('RateServiceController', () => {
       expect(result).toHaveProperty('ethereum');
     });
 
+    it('should throw an error if coins and currency are missing', async () => {
+      await expect(rateServiceController.getRates('', '')).rejects.toThrow(BadRequestException);
+    });
+
     it('should throw an error if coins or currency are missing', async () => {
-      await expect(rateServiceController.getRates('', '')).rejects.toThrow(
-        'Coins and currency parameters are required'
-      );
+      await expect(rateServiceController.getRates('bitcoin', '')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw an error if coins or currency are not supported', async () => {
+      await expect(rateServiceController.getRates('israel', 'israeli')).rejects.toThrow(BadRequestException);
     });
   });
 });

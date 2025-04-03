@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Query } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Logger, Query } from '@nestjs/common';
 import { RateServiceCoinGecko } from './rate-service-coin-gecko.service';
 
 @Controller('rate')
@@ -15,11 +15,13 @@ export class RateServiceController {
     // Validate the coins and currency parameters
     try {
       if (!this.rateServiceService.validateCoins(coins) || !this.rateServiceService.validateCurrency(currency)) {
-        throw new Error('Coins and currency parameters are required');
+        throw new BadRequestException('Coins and currency parameters are not valid');
       }
-      return await this.rateServiceService.getRates(coins.toLowerCase(), currency.toLowerCase());
+      const res = await this.rateServiceService.getRates(coins.toLowerCase(), currency.toLowerCase());
+      this.logger.log(`Returning rates: ${JSON.stringify(res)}`);
+      return res;
     } catch (error) {
-      this.logger.error('Error fetching rates:', error);
+      this.logger.error('Error fetching rates:', error.message);
       throw error;
     }
   }

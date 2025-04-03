@@ -1,13 +1,13 @@
 import { HttpService } from '@nestjs/axios';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RateServiceInterface } from './rate-service.interface';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
-export class RateServiceCoinGecko implements RateServiceInterface {
+export class RateServiceCoinGecko implements RateServiceInterface, OnModuleInit {
   private readonly logger = new Logger(RateServiceCoinGecko.name);
   private readonly COIN_GECKO_API_URL: string;
   private readonly COIN_GECKO_API_KEY: string;
@@ -25,13 +25,15 @@ export class RateServiceCoinGecko implements RateServiceInterface {
     this.SUPPORTED_CURRENCIES = new Set<string>(this.configService.getOrThrow<string>('SUPPORTED_CURRENCIES').toLowerCase().split(',').map(coin => coin.trim()));
   }
 
-  // 1 minute interval
-  @Cron('*/1 * * * *')
+  async onModuleInit() {
+    await this.updateRates();
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
   async updateRates() {
+    this.logger.log('Updating rates in cache...');
     const rates = await this.getRatesRequest(Array.from(this.SUPPORTED_COINS).join(','), Array.from(this.SUPPORTED_CURRENCIES).join(','));
-    this.logger.log(`Updating rates in cache: ${JSON.stringify(rates)}`);
     const ratesCache = this.ratesToCache(rates);
-    this.logger.log(`Setting rates in cache: ${JSON.stringify(ratesCache)}`);
     if (ratesCache.length) {
       await this.cacheManager.mset(ratesCache);
     }
@@ -39,13 +41,15 @@ export class RateServiceCoinGecko implements RateServiceInterface {
 
   async getRates(coins: string, currency: string): Promise<object> {
     const sanitizedCoins = coins.split(',').map(coin => coin.trim());
-    const cachedRates = await this.cacheManager.mget(sanitizedCoins);
-    if (sanitizedCoins.length === cachedRates.length) {
-      this.logger.log(`Returning cached rates: ${JSON.stringify(cachedRates)}`);
-      return cachedRates;
+    const cachedRates = await this.cacheManager.mget<{ [currency: string]: number }>(sanitizedCoins);
+    // thruthy check if all coins are in cache
+    if (cachedRates.every(rate => rate != undefined)) {
+      this.logger.log(`Returning cached rates`);
+      // add coin key to each rate object
+      return Object.fromEntries(sanitizedCoins.map((coin, index) => [coin, { [currency]: cachedRates[index][currency] }]));
     }
 
-    const rates = await this.getRatesRequest(coins, currency);
+    const rates = await this.getRatesRequest(sanitizedCoins.join(','), currency);
     const ratesCache = this.ratesToCache(rates);
     this.logger.log(`Setting rates in cache: ${JSON.stringify(ratesCache)}`);
     if (ratesCache.length) {
