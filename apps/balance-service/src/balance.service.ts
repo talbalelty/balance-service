@@ -56,6 +56,9 @@ export class BalanceService {
 
   async getTotalBalance(userId: string, currency: string): Promise<number> {
     const balance: Balance = await this.readBalance(userId);
+    if (!balance) {
+      throw new RecordNotFoundException(`Balance for user ${userId} not found`);
+    }
     const coins = Object.keys(balance.assets).join(',');
     const url = new URL('rate', this.RATE_SERVICE_URL);
     url.searchParams.append('coins', coins);

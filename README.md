@@ -39,27 +39,28 @@ This project is a simple crypto balance management system developed using the Ne
 ### Prerequisites
 - Node.js (v16 or higher)
 - npm (v8 or higher)
+- docker engine running on the computer
 
 ### Installation
 1. Clone the repository:
    ```bash
    git clone <repository-url>
    cd balance-service
+   ```
 
-2. Installation
-    ```bash
-    npm install
-
-3. Execution - open two terminal and run the following commands in each
+2. Execution - Open terminal
     ``` bash
-    npm run start
-
-    npm run start:rate
+    docker-compose build
+    docker-compose up
+    ```
 
 ## Request Examples
+I recommend to start with the first request to init data in the storage
+
 Create  
 ``` 
 POST
+http://localhost:3000/balance
 {
     "assets": [
         {
