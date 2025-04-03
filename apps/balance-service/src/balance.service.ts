@@ -86,6 +86,28 @@ export class BalanceService {
     return await this.databaseService.deleteById(this.TABLE_NAME, userId);
   }
 
+  async rebalance(userId: string, targetPercentages: Record<string, number>): Promise<BalanceDto> {
+    const balances = await this.getBalances(userId);
+    const totalValue = balances.assets.reduce((sum, asset) => sum + asset.value, 0);
+    // Calculate the target value for each asset
+    const targetValues: Record<string, number> = {};
+    for (const [assetName, percentage] of Object.entries(targetPercentages)) {
+      targetValues[assetName] = (percentage / 100) * totalValue;
+    }
+
+    // Adjust each asset to match the target value
+    for (const asset of balances.assets) {
+      const targetValue = targetValues[asset.name] || 0; // Default to 0 if the asset is not in the target percentages
+      const adjustment = targetValue - asset.value;
+
+      // Add or remove the adjustment
+      if (adjustment !== 0) {
+        await this.addOrRemoveBalance(userId, { name: asset.name, value: adjustment });
+      }
+    }
+    return await this.getBalances(userId);
+  }
+
   private calculateTotalBalance(assets: Asset, rates: object, currency: string): number {
     let total = 0;
     for (const [name, value] of Object.entries(assets)) {

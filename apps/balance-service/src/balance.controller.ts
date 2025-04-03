@@ -105,6 +105,29 @@ export class BalanceController {
     }
   }
 
+  @Put('rebalance')
+  async rebalance(
+    @Headers('X-User-ID') userId: string,
+    @Body() targetPercentages: Record<string, number>
+  ): Promise<BalanceDto> {
+    try {
+      this.logger.log(`Rebalancing holdings for user ${userId} with target percentages: ${JSON.stringify(targetPercentages)}`);
+      this.validateUserId(userId);
+
+      // Validate that the percentages add up to 100
+      const totalPercentage = Object.values(targetPercentages).reduce((sum, percentage) => sum + percentage, 0);
+      if (totalPercentage !== 100) {
+        throw new BadRequestException('Target percentages must add up to 100');
+      }
+
+      // Call the service to perform the rebalance
+      return await this.balanceService.rebalance(userId, targetPercentages);
+    } catch (error) {
+      this.logger.error(`Error rebalancing holdings for user ${userId}: ${error.message}`);
+      throw error;
+    }
+  }
+
   private validateUserId(userId: string) {
     if (!userId) {
       throw new BadRequestException('User ID is required');

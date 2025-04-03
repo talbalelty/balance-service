@@ -85,5 +85,11 @@ describe('BalanceController', () => {
     it('should not return total balance', async () => {
       await expect(balanceController.getTotal(userId, 'XXX')).rejects.toThrow("Request failed with status code 400");
     });
+
+    it('should rebalance holdings to match target percentages', async () => {
+      const targetPercentages = { bitcoin: 50, ethereum: 50 };
+      const balanceDto: BalanceDto = await balanceController.rebalance(userId, targetPercentages);
+      expect(balanceDto).toBeDefined();
+    });
   });
 });
