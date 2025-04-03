@@ -4,10 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [ConfigModule.forRoot({
-    isGlobal: true
-  }), HttpModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true
+    }),
+    HttpModule,
+  ],
   providers: [UtilityService],
   exports: [UtilityService, HttpModule],
 })
-export class UtilityModule {}
+export class UtilityModule { }

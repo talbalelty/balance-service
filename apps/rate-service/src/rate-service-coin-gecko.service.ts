@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RateServiceInterface } from './rate-service.interface';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -40,7 +40,7 @@ export class RateServiceCoinGecko implements RateServiceInterface, OnModuleInit 
   }
 
   async getRates(coins: string, currency: string): Promise<object> {
-    const sanitizedCoins = coins.split(',').map(coin => coin.trim());
+    const sanitizedCoins = coins.split(',');
     const cachedRates = await this.cacheManager.mget<{ [currency: string]: number }>(sanitizedCoins);
     // thruthy check if all coins are in cache
     if (cachedRates.every(rate => rate != undefined)) {
@@ -49,7 +49,7 @@ export class RateServiceCoinGecko implements RateServiceInterface, OnModuleInit 
       return Object.fromEntries(sanitizedCoins.map((coin, index) => [coin, { [currency]: cachedRates[index][currency] }]));
     }
 
-    const rates = await this.getRatesRequest(sanitizedCoins.join(','), currency);
+    const rates = await this.getRatesRequest(coins, currency);
     const ratesCache = this.ratesToCache(rates);
     this.logger.log(`Setting rates in cache: ${JSON.stringify(ratesCache)}`);
     if (ratesCache.length) {
@@ -58,13 +58,30 @@ export class RateServiceCoinGecko implements RateServiceInterface, OnModuleInit 
     return rates;
   }
 
-  validateCoins(coins: string): boolean {
-    const coinsArray = coins.split(',').map(coin => coin.trim().toLowerCase());
-    return coinsArray.every(coin => this.SUPPORTED_COINS.has(coin));
+  validateCoins(coins: string): string {
+    if (!coins) {
+      throw new BadRequestException(`Coins parameter is required.`);
+    }
+
+    const coinsArray = coins.toLowerCase().split(',').map(coin => coin.trim());
+    if (!coinsArray.every(coin => this.SUPPORTED_COINS.has(coin))) {
+      throw new BadRequestException(`Coins parameter is not valid.`);
+    }
+
+    return coinsArray.join(',');
   }
 
-  validateCurrency(currency: string): boolean {
-    return this.SUPPORTED_CURRENCIES.has(currency.toLowerCase());
+  validateCurrency(currency: string): string {
+    if (!currency) {
+      throw new BadRequestException(`Currency parameter is required.`);
+    }
+
+    currency = currency.toLowerCase().trim();
+    if (!this.SUPPORTED_CURRENCIES.has(currency)) {
+      throw new BadRequestException(`Currency parameter is not valid.`);
+    }
+
+    return currency;
   }
 
   private async getRatesRequest(coins: string, currency: string): Promise<{ [coin: string]: { [currency: string]: number } }> {
